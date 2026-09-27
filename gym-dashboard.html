@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TETTA TRAINING LOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121016; --surface:#1C1922; --surface-2:#242030; --line:#332E3D;
+    --text:#F2EFE9; --text-dim:#A79FB3; --text-faint:#6E6779;
+    --coral:#FF5D5D; --violet:#8C6CFF; --lime:#C6FF4D; --cyan:#3FE0C5;
+    --radius:18px;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.6;
+  }
+  .num{ font-family:"Space Grotesk","Helvetica Neue",Arial,sans-serif; font-variant-numeric:tabular-nums; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 20px 80px; }
+
+  /* HERO */
+  .hero{
+    position:relative; margin:0 -20px 28px; padding:56px 20px 32px; overflow:hidden;
+    background:
+      radial-gradient(120% 90% at 12% -10%, rgba(140,108,255,.85), transparent 55%),
+      radial-gradient(110% 90% at 100% 0%, rgba(255,93,93,.75), transparent 60%),
+      radial-gradient(140% 100% at 50% 120%, rgba(63,224,197,.55), transparent 60%),
+      linear-gradient(160deg, #17131f 0%, #0f0d13 100%);
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity:.18; mix-blend-mode:overlay; pointer-events:none;
+  }
+  .hero-top{ position:relative; display:flex; justify-content:space-between; align-items:baseline; font-size:.78rem; color:rgba(242,239,233,.72); }
+  .hero-label{ position:relative; margin-top:26px; font-size:.9rem; color:rgba(242,239,233,.78); }
+  .hero-weight{ position:relative; display:flex; align-items:flex-end; gap:10px; margin-top:4px; }
+  .hero-weight .num{ font-size:clamp(3.4rem,15vw,4.6rem); font-weight:700; line-height:.95; }
+  .hero-weight .unit{ font-size:1.2rem; color:rgba(242,239,233,.7); padding-bottom:.5rem; }
+  .hero-sub{ position:relative; display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .hero-chip{
+    background:rgba(18,16,22,.45); border:1px solid rgba(242,239,233,.18); border-radius:999px;
+    padding:8px 14px; font-size:.82rem; display:flex; gap:6px; align-items:baseline; backdrop-filter:blur(6px);
+  }
+  .hero-chip .num{ font-weight:600; font-size:.95rem; }
+  .hero-chip .down{ color:var(--lime); }
+
+  section{ margin-bottom:36px; }
+  .sec-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+  .sec-title{ font-size:1.05rem; font-weight:700; }
+  .sec-note{ font-size:.76rem; color:var(--text-faint); }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; }
+
+  /* INTERACTIVE CHART */
+  .chart{ position:relative; touch-action:pan-y; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .chart svg{ display:block; width:100%; overflow:visible; }
+  .tip{
+    position:absolute; left:0; top:0; z-index:3; pointer-events:none;
+    background:rgba(36,32,48,.94); border:1px solid rgba(242,239,233,.22);
+    border-radius:12px; padding:8px 12px; font-size:.76rem; line-height:1.5;
+    white-space:nowrap; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 10px 28px rgba(0,0,0,.45);
+  }
+  .tip[hidden]{ display:none; }
+  .tip .t-date{ color:var(--text-dim); font-size:.72rem; }
+  .tip .t-row{ display:flex; align-items:center; gap:6px; }
+  .tip .t-row .num{ font-weight:600; font-size:.92rem; }
+  .tip .t-gym{ display:inline-block; margin-left:6px; font-size:.62rem; font-weight:700; background:var(--lime); color:#121016; padding:1px 6px; border-radius:5px; }
+  .chart-foot{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; min-height:30px; }
+  .chart-legend{ display:flex; gap:14px; flex-wrap:wrap; font-size:.74rem; color:var(--text-dim); }
+  .chart-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .zoom-reset{
+    flex-shrink:0; font:inherit; font-size:.72rem; color:var(--text);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:5px 12px; cursor:pointer;
+  }
+  .zoom-reset[hidden]{ display:none; }
+  .zoom-reset:focus-visible{ outline:2px solid var(--violet); outline-offset:2px; }
+  .hint{ font-size:.7rem; color:var(--text-faint); margin-top:6px; }
+
+  /* visits */
+  .weeks{ display:flex; flex-direction:column; gap:10px; }
+  .week-row{ display:flex; align-items:center; gap:10px; }
+  .week-label{ width:52px; flex-shrink:0; font-size:.72rem; color:var(--text-faint); }
+  .week-days{ display:flex; gap:6px; flex:1; }
+  .day-dot{
+    flex:1; aspect-ratio:1/1; border-radius:8px; background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; font-size:.62rem; color:var(--text-faint); border:1px solid var(--line);
+  }
+  .day-dot.on{ background:linear-gradient(135deg, var(--violet), var(--coral)); color:#121016; font-weight:700; border-color:transparent; }
+
+  /* lifts */
+  .lift{ margin-bottom:26px; }
+  .lift:last-child{ margin-bottom:0; }
+  .lift-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .lift-name{ font-size:.92rem; font-weight:700; }
+  .lift-pb{ font-size:.78rem; }
+  .lift-pb .num{ font-weight:700; }
+  .pb-tag{ display:inline-block; margin-left:6px; font-size:.62rem; font-weight:700; background:var(--lime); color:#121016; padding:2px 6px; border-radius:5px; }
+  .lift-note{ font-size:.74rem; color:var(--text-dim); margin-top:6px; }
+
+  /* log */
+  .log-item{ display:flex; gap:14px; padding:14px 0; border-top:1px solid var(--line); }
+  .log-item:first-child{ border-top:none; }
+  .log-date{ width:56px; flex-shrink:0; font-size:.78rem; color:var(--text-dim); }
+  .log-date .num{ font-size:.95rem; color:var(--text); font-weight:600; }
+  .log-body-part{ font-size:.72rem; color:var(--cyan); margin-bottom:3px; }
+  .log-detail{ font-size:.82rem; color:var(--text-dim); }
+
+  /* diet */
+  .diet-stats{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .diet-stat{ background:var(--surface-2); border-radius:14px; padding:14px; }
+  .diet-stat .num{ font-size:1.6rem; font-weight:700; }
+  .diet-stat .label{ font-size:.72rem; color:var(--text-dim); margin-top:2px; }
+  .diet-stat.accent .num{ color:var(--lime); }
+
+  footer{ text-align:center; font-size:.72rem; color:var(--text-faint); padding-top:20px; }
+
+  @media (prefers-reduced-motion:no-preference){ .fade-in{ animation:fadeIn .6s ease both; } }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero fade-in">
+    <div class="hero-top"><span>TETTA TRAINING LOG</span><span id="todayLabel"></span></div>
+    <div class="hero-label">現在体重</div>
+    <div class="hero-weight"><span class="num" id="heroWeight">—</span><span class="unit">kg</span></div>
+    <div class="hero-sub">
+      <div class="hero-chip">開始比 <span class="num down" id="heroDelta">—</span></div>
+      <div class="hero-chip">目標まで <span class="num down" id="heroToGoal">—</span></div>
+      <div class="hero-chip">期限まで <span class="num" id="heroDays">—</span>日</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">体重・体脂肪率の推移</div><div class="sec-note">8/10 開始</div></div>
+    <div class="card">
+      <div class="chart" id="weightChart"></div>
+      <div class="chart-foot">
+        <div class="chart-legend">
+          <span><i class="dot" style="background:var(--coral)"></i>体重</span>
+          <span><i class="dot" style="background:var(--cyan)"></i>体脂肪率</span>
+          <span><i class="dot" style="background:var(--lime)"></i>ジムの日</span>
+        </div>
+        <button class="zoom-reset" type="button" data-for="weightChart" hidden>全体表示</button>
+      </div>
+      <div class="hint">タッチで数値表示／2本指で拡大・縮小・左右移動／ダブルタップで元に戻す</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">7日平均体重の推移</div><div class="sec-note">週単位トレンド</div></div>
+    <div class="card">
+      <div class="chart" id="avgChart"></div>
+      <div class="chart-foot">
+        <div class="chart-legend"><span><i class="dot" style="background:var(--violet)"></i>7日平均</span></div>
+        <button class="zoom-reset" type="button" data-for="avgChart" hidden>全体表示</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">ジム来訪の継続性</div><div class="sec-note">週2回ペース目標</div></div>
+    <div class="card"><div class="weeks" id="visitWeeks"></div></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">種目別 重量進捗</div><div class="sec-note">タッチでセット内容</div></div>
+    <div class="card" id="liftCards"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">トレーニング全記録</div><div class="sec-note" id="logCount"></div></div>
+    <div class="card" id="logList"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><div class="sec-title">食事管理を始めてからの変化</div></div>
+    <div class="card">
+      <div class="diet-stats">
+        <div class="diet-stat accent"><div class="num" id="dietDelta">—</div><div class="label">体重変化</div></div>
+        <div class="diet-stat"><div class="num" id="dietDays">—</div><div class="label">経過日数</div></div>
+        <div class="diet-stat"><div class="num" id="dietBf">—</div><div class="label">体脂肪率変化</div></div>
+        <div class="diet-stat accent"><div class="num" id="dietRemain">—</div><div class="label">目標まで</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>最終更新: <span id="lastUpdate"></span></footer>
+</div>
+
+<script>
+/* ===== DATA — 新しい記録はここに追記 ===== */
+const weightData = [
+  {d:"2026-08-10", w:74.0, bf:null},
+  {d:"2026-08-14", w:73.5, bf:22.2},
+  {d:"2026-08-23", w:72.7, bf:22.1},
+  {d:"2026-08-26", w:72.3, bf:22.1},
+  {d:"2026-08-31", w:72.6, bf:22.3},
+  {d:"2026-09-01", w:72.0, bf:21.7},
+  {d:"2026-09-02", w:72.2, bf:21.9},
+  {d:"2026-09-05", w:71.4, bf:21.6},
+  {d:"2026-09-06", w:72.0, bf:22.5},
+  {d:"2026-09-07", w:71.7, bf:22.2},
+  {d:"2026-09-08", w:71.4, bf:21.7},
+  {d:"2026-09-09", w:71.1, bf:22.2},
+  {d:"2026-09-10", w:71.0, bf:21.7},
+  {d:"2026-09-11", w:71.1, bf:22.3},
+  {d:"2026-09-12", w:70.6, bf:22.5},
+  {d:"2026-09-13", w:70.8, bf:21.7},
+  {d:"2026-09-14", w:71.3, bf:20.3},
+  {d:"2026-09-15", w:71.3, bf:21.5},
+  {d:"2026-09-16", w:70.6, bf:21.3},
+  {d:"2026-09-17", w:70.4, bf:21.4},
+  {d:"2026-09-18", w:70.0, bf:21.4},
+  {d:"2026-09-19", w:71.1, bf:21.9},
+  {d:"2026-09-20", w:71.3, bf:19.9},
+  {d:"2026-09-21", w:72.0, bf:21.7},
+  {d:"2026-09-22", w:71.4, bf:21.3},
+  {d:"2026-09-23", w:71.4, bf:21.3},
+  {d:"2026-09-24", w:71.6, bf:20.9},
+  {d:"2026-09-25", w:71.3, bf:21.2},
+  {d:"2026-09-26", w:70.1, bf:21.6},
+  {d:"2026-09-27", w:70.7, bf:22.0},
+];
+
+const sevenDayAvg = [
+  {range:"9/2-8",   v:71.96},
+  {range:"9/6-12",  v:71.20},
+  {range:"9/10-16", v:71.01},
+  {range:"9/11-17", v:70.83},
+  {range:"9/12-18", v:70.34},
+  {range:"9/13-19", v:70.67},
+  {range:"9/14-20", v:70.86},
+  {range:"9/15-21", v:71.03},
+  {range:"9/16-22", v:70.77},
+  {range:"9/17-23", v:71.05},
+  {range:"9/18-24", v:71.06},
+  {range:"9/19-25", v:71.44},
+  {range:"9/20-26", v:71.30},
+  {range:"9/21-27", v:71.21},
+];
+
+const trainingLog = [
+  {d:"2026-08-22", part:"胸＋背中", detail:"インクライン 49.9→59.9kg×10 (PB)"},
+  {d:"2026-08-24", part:"脚＋肩", detail:"6種目17セット"},
+  {d:"2026-08-29", part:"胸＋背中＋脚", detail:"インクライン 58.9kg×10×2"},
+  {d:"2026-09-02", part:"胸＋肩", detail:"インクライン 60kg×10×3 (PB)"},
+  {d:"2026-09-06", part:"脚＋背中＋胸", detail:"レッグプレス 50kg×10×3 / ラットプル 54kg×10×3"},
+  {d:"2026-09-11", part:"胸＋背中（糖質なし）", detail:"インクライン 58.9kg×10×2 / チェストプレス 60kg×10×2 / DVGローイング 60kg×10×2"},
+  {d:"2026-09-16", part:"胸＋背中", detail:"インクライン 60kg×10×3 / ラットプル 60kg×10×2 (+6kg PB) / チェストプレス 60kg×10×3 / DVGローイング 60kg×10×3 / レッグプレス 93kg×10×3"},
+  {d:"2026-09-19", part:"脚", detail:"レッグプレス 50kg×10×3×2 / レッグカール 40kg×10×3 / カーフレイズ 20回×2 / レッグプレス 100kg×10×2"},
+  {d:"2026-09-23", part:"胸＋脚", detail:"チェストプレス 60kg×10×3 / インクラインプレス 60kg×10×3 / レッグプレス 50kg×10×3 / レッグカール 40kg×10×2 / カーフレイズ 20回×2"},
+  {d:"2026-09-27", part:"胸＋背中＋有酸素", detail:"インクラインプレス 60kg×10×3 / チェストプレス 65kg×10×3 (PB) / ラットプルダウン 60kg×10×2（2セット目6回） / ジョギング10分"},
+];
+
+const lifts = [
+  { name:"インクラインプレス", current:"60kg × 10 × 3", color:"#FF5D5D",
+    series:[
+      {d:"8/22", v:59.9, s:"59.9kg × 10"},
+      {d:"8/29", v:58.9, s:"58.9kg × 10 × 2"},
+      {d:"9/2",  v:60.0, s:"60kg × 10 × 3（PB）"},
+      {d:"9/11", v:58.9, s:"58.9kg × 10 × 2"},
+      {d:"9/16", v:60.0, s:"60kg × 10 × 3"},
+      {d:"9/23", v:60.0, s:"60kg × 10 × 3"},
+      {d:"9/27", v:60.0, s:"60kg × 10 × 3"},
+    ],
+    note:"9/2に60kg×10×3を達成後、安定して維持。次の目標はセット内回数を12回へ。" },
+  { name:"チェストプレス", current:"65kg × 10 × 3", color:"#8C6CFF",
+    series:[
+      {d:"9/11", v:60.0, s:"60kg × 10 × 2"},
+      {d:"9/16", v:60.0, s:"60kg × 10 × 3"},
+      {d:"9/23", v:60.0, s:"60kg × 10 × 3"},
+      {d:"9/27", v:65.0, s:"65kg × 10 × 3（PB）"},
+    ],
+    note:"9/27に65kg×10×3を達成し新PB。5kg更新。" },
+  { name:"ラットプルダウン", current:"60kg × 10 × 2", color:"#3FE0C5",
+    series:[
+      {d:"9/6",  v:54.0, s:"54kg × 10 × 3"},
+      {d:"9/16", v:60.0, s:"60kg × 10 × 2（+6kg PB）"},
+      {d:"9/27", v:60.0, s:"60kg × 10, 6（2セット目6回）"},
+    ],
+    note:"9/16に60kg×10×2を達成。9/27は2セット目が6回止まり。疲労管理を要観察。" },
+  { name:"レッグプレス", current:"93〜100kg", color:"#C6FF4D",
+    series:[
+      {d:"9/6",  v:50.0,  s:"50kg × 10 × 3"},
+      {d:"9/16", v:93.0,  s:"93kg × 10 × 3"},
+      {d:"9/19", v:100.0, s:"100kg × 10 × 2"},
+      {d:"9/23", v:50.0,  s:"50kg × 10 × 3（軽負荷）"},
+    ],
+    note:"9/19に100kg×10×2まで到達。9/23は胸の日の補助として軽負荷。" },
+];
+
+const goal = { target:68.0, deadline:"2026-11-08" };
+const today = new Date(2026, 8, 27);
+
+/* ===== UTILS ===== */
+const pad2 = n => String(n).padStart(2,"0");
+const ymd = dt => `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;   // ローカル日付（時差ずれ防止）
+const parseD = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const WD = ["日","月","火","水","木","金","土"];
+const md = s => { const dt=parseD(s); return `${dt.getMonth()+1}/${dt.getDate()}`; };
+const mdw = s => { const dt=parseD(s); return `${dt.getMonth()+1}/${dt.getDate()}（${WD[dt.getDay()]}）`; };
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const gymDays = new Set(trainingLog.map(l=>l.d));
+
+/* ===== INTERACTIVE CHART ===== */
+const charts = {};
+function makeChart(host, cfg){
+  const n = cfg.data.length;
+  const st = { i0:0, i1:Math.max(1,n-1), active:null };
+  const pad = { l:cfg.padL ?? 36, r:cfg.padR ?? 12, t:14, b:cfg.xLabels===false ? 8 : 24 };
+  const H = cfg.height;
+  const minSpan = Math.min(cfg.minSpan ?? 4, n-1);
+  host.innerHTML = `<svg role="img" aria-label="${cfg.label||""}"></svg><div class="tip" hidden></div>`;
+  const svg = host.querySelector("svg"), tip = host.querySelector(".tip");
+  const resetBtn = document.querySelector(`.zoom-reset[data-for="${host.id}"]`);
+
+  const geom = () => { const W = host.clientWidth; return { W, pw:W-pad.l-pad.r, ph:H-pad.t-pad.b }; };
+  const xOf = (i,g) => pad.l + (n===1 ? g.pw/2 : (i-st.i0)/(st.i1-st.i0)*g.pw);
+  const iAt = (px,g) => st.i0 + (px-pad.l)/g.pw*(st.i1-st.i0);
+
+  function render(){
+    const g = geom(); if(g.W <= 0) return;
+    svg.setAttribute("viewBox", `0 0 ${g.W} ${H}`);
+    svg.setAttribute("height", H);
+    const a = Math.max(0, Math.floor(st.i0)), b = Math.min(n-1, Math.ceil(st.i1));
+    const clip = `${host.id}-clip`;
+    let s = `<defs><clipPath id="${clip}"><rect x="${pad.l-6}" y="0" width="${g.pw+12}" height="${H}"/></clipPath>${cfg.defs||""}</defs>`;
+
+    const scales = cfg.series.map(se=>{
+      const vals=[]; for(let i=a;i<=b;i++){ const v=cfg.data[i][se.key]; if(v!=null) vals.push(v); }
+      if(!vals.length) return null;
+      let lo=Math.min(...vals), hi=Math.max(...vals);
+      const m = Math.max((hi-lo)*0.18, se.minPad ?? 0.3); lo-=m; hi+=m;
+      return { lo, hi, y:v => pad.t + (1-(v-lo)/(hi-lo))*g.ph };
+    });
+
+    // grid + axis labels
+    for(let k=0;k<=3;k++){
+      const gy = pad.t + k*g.ph/3;
+      s += `<line x1="${pad.l}" y1="${gy}" x2="${g.W-pad.r}" y2="${gy}" stroke="#332E3D" stroke-width="1"/>`;
+      cfg.series.forEach((se,si)=>{
+        if(!se.axis || !scales[si]) return;
+        const v = scales[si].hi - k*(scales[si].hi-scales[si].lo)/3;
+        const left = se.axis==="left";
+        s += `<text x="${left?pad.l-6:g.W-pad.r+6}" y="${gy+3.5}" fill="${se.axisColor||"#6E6779"}" font-size="9.5" font-family="Space Grotesk" text-anchor="${left?"end":"start"}">${v.toFixed(se.axisDigits??1)}</text>`;
+      });
+    }
+
+    // gym-day markers
+    if(cfg.markGym){
+      for(let i=a;i<=b;i++) if(gymDays.has(cfg.data[i].d)){
+        const x=xOf(i,g);
+        s += `<rect clip-path="url(#${clip})" x="${x-1}" y="${pad.t}" width="2" height="${g.ph}" fill="#C6FF4D" opacity=".18"/>`;
+        s += `<circle clip-path="url(#${clip})" cx="${x}" cy="${H-pad.b+1}" r="2.5" fill="#C6FF4D"/>`;
+      }
+    }
+
+    // series paths
+    const showDots = (b-a) <= (cfg.dotLimit ?? 22);
+    cfg.series.forEach((se,si)=>{
+      const sc = scales[si]; if(!sc) return;
+      const pts=[]; for(let i=Math.max(0,a-1);i<=Math.min(n-1,b+1);i++){ const v=cfg.data[i][se.key]; if(v!=null) pts.push([xOf(i,g), sc.y(v)]); }
+      const d = pts.map((p,k)=>`${k?"L":"M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+      s += `<path clip-path="url(#${clip})" d="${d}" fill="none" stroke="${se.stroke||se.color}" stroke-width="${se.width||2.5}" stroke-linejoin="round" stroke-linecap="round" opacity="${se.opacity??1}"/>`;
+      if(showDots) pts.forEach(p=>{ s += `<circle clip-path="url(#${clip})" cx="${p[0]}" cy="${p[1]}" r="2.5" fill="${se.color}" opacity=".8"/>`; });
+    });
+
+    // x labels
+    if(cfg.xLabels !== false){
+      const ticks = g.W < 380 ? 3 : 4;
+      for(let k=0;k<ticks;k++){
+        const i = Math.round(st.i0 + k/(ticks-1)*(st.i1-st.i0));
+        if(i<0||i>=n) continue;
+        const anchor = k===0 ? "start" : k===ticks-1 ? "end" : "middle";
+        s += `<text x="${xOf(i,g)}" y="${H-6}" fill="#6E6779" font-size="10" font-family="Space Grotesk" text-anchor="${anchor}">${cfg.xLabel(cfg.data[i])}</text>`;
+      }
+    }
+
+    // active cursor
+    let anchorY = null, ax = null;
+    if(st.active!=null){
+      const i = st.active; ax = xOf(i,g);
+      s += `<line x1="${ax}" y1="${pad.t}" x2="${ax}" y2="${H-pad.b}" stroke="#F2EFE9" stroke-width="1" opacity=".45"/>`;
+      cfg.series.forEach((se,si)=>{
+        const v = cfg.data[i][se.key]; if(v==null || !scales[si]) return;
+        const cy = scales[si].y(v); anchorY = anchorY==null ? cy : Math.min(anchorY, cy);
+        s += `<circle cx="${ax}" cy="${cy}" r="6" fill="${se.color}" stroke="#121016" stroke-width="2.5"/>`;
+      });
+    }
+    svg.innerHTML = s;
+
+    // tooltip
+    if(st.active!=null){
+      tip.innerHTML = cfg.tip(cfg.data[st.active]);
+      tip.hidden = false;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      let left = clamp(ax - tw/2, 0, g.W - tw);
+      let top = (anchorY ?? pad.t) - th - 14;
+      if(top < -th*0.4) top = (anchorY ?? pad.t) + 16;
+      tip.style.transform = `translate(${left}px, ${top}px)`;
+    } else tip.hidden = true;
+
+    if(resetBtn) resetBtn.hidden = !(st.i1 - st.i0 < n-1 - 1e-6);
+  }
+
+  function pickAt(clientX){
+    const r = svg.getBoundingClientRect(), g = geom();
+    let i = Math.round(iAt(clientX - r.left, g));
+    i = clamp(i, Math.max(0, Math.ceil(st.i0-1e-6)), Math.min(n-1, Math.floor(st.i1+1e-6)));
+    if(st.active !== i){ st.active = i; render(); }
+  }
+  function zoomAround(anchorIdx, frac, span){
+    span = clamp(span, minSpan, n-1);
+    let i0 = clamp(anchorIdx - frac*span, 0, n-1-span);
+    st.i0 = i0; st.i1 = i0 + span;
+  }
+  function reset(){ st.i0=0; st.i1=n-1; st.active=null; render(); }
+
+  let pinch = null, lastTap = 0;
+  const midOf = (t1,t2) => (t1.clientX+t2.clientX)/2 - svg.getBoundingClientRect().left;
+  const distOf = (t1,t2) => Math.max(1, Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY));
+
+  host.addEventListener("touchstart", e=>{
+    if(cfg.zoom && e.touches.length===2){
+      e.preventDefault();
+      const [t1,t2]=e.touches, g=geom(), mid=midOf(t1,t2);
+      pinch = { d:distOf(t1,t2), span:st.i1-st.i0, anchor:iAt(mid,g) };
+      st.active = null; render(); return;
+    }
+    if(e.touches.length===1){
+      const now = Date.now();
+      if(cfg.zoom && now - lastTap < 300){ e.preventDefault(); lastTap = 0; reset(); return; }
+      lastTap = now;
+      pickAt(e.touches[0].clientX);
+    }
+  }, {passive:false});
+
+  host.addEventListener("touchmove", e=>{
+    if(pinch && e.touches.length===2){
+      e.preventDefault();
+      const [t1,t2]=e.touches, g=geom(), mid=midOf(t1,t2);
+      const span = pinch.span * pinch.d / distOf(t1,t2);
+      zoomAround(pinch.anchor, (mid-pad.l)/g.pw, span);
+      render();
+    } else if(!pinch && e.touches.length===1){
+      pickAt(e.touches[0].clientX);
+    }
+  }, {passive:false});
+
+  host.addEventListener("touchend", e=>{ if(e.touches.length < 2) pinch = null; });
+
+  // PC: マウスホバーで表示、ホイールで拡大縮小
+  host.addEventListener("mousemove", e=> pickAt(e.clientX));
+  host.addEventListener("mouseleave", ()=>{ st.active=null; render(); });
+  if(cfg.zoom) host.addEventListener("wheel", e=>{
+    e.preventDefault();
+    const r=svg.getBoundingClientRect(), g=geom(), px=e.clientX-r.left;
+    zoomAround(iAt(px,g), (px-pad.l)/g.pw, (st.i1-st.i0) * (e.deltaY>0 ? 1.15 : 0.87));
+    render();
+  }, {passive:false});
+  host.addEventListener("dblclick", ()=>{ if(cfg.zoom) reset(); });
+
+  if(resetBtn) resetBtn.addEventListener("click", reset);
+  new ResizeObserver(render).observe(host);
+
+  charts[host.id] = { hide(){ if(st.active!=null){ st.active=null; render(); } } };
+  render();
+}
+
+// グラフ外をタッチしたらポップアップを閉じる
+document.addEventListener("touchstart", e=>{
+  Object.entries(charts).forEach(([id,c])=>{ if(!document.getElementById(id).contains(e.target)) c.hide(); });
+}, {passive:true});
+
+/* ===== RENDER ===== */
+document.getElementById("todayLabel").textContent = `${today.getMonth()+1}/${today.getDate()} 更新`;
+document.getElementById("lastUpdate").textContent = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+
+const latest = weightData[weightData.length-1], start = weightData[0];
+document.getElementById("heroWeight").textContent = latest.w.toFixed(1);
+document.getElementById("heroDelta").textContent = `${(latest.w-start.w).toFixed(1)}kg`;
+document.getElementById("heroToGoal").textContent = `${(latest.w-goal.target).toFixed(1)}kg`;
+document.getElementById("heroDays").textContent = Math.round((parseD(goal.deadline)-today)/86400000);
+
+// 体重＋体脂肪率
+makeChart(document.getElementById("weightChart"), {
+  label:"体重と体脂肪率の推移", data:weightData, height:250, zoom:true, minSpan:4,
+  padL:38, padR:36, markGym:true,
+  series:[
+    {key:"w",  color:"#FF5D5D", width:2.6, axis:"left",  axisColor:"#FF8A8A", minPad:0.3},
+    {key:"bf", color:"#3FE0C5", width:2,   axis:"right", axisColor:"#6FE8D3", minPad:0.4, opacity:.9},
+  ],
+  xLabel:p => md(p.d),
+  tip:p => `<div class="t-date">${mdw(p.d)}${gymDays.has(p.d)?'<span class="t-gym">ジム</span>':""}</div>
+    <div class="t-row"><i class="dot" style="background:var(--coral)"></i>体重 <span class="num">${p.w.toFixed(1)}</span>kg</div>
+    ${p.bf!=null?`<div class="t-row"><i class="dot" style="background:var(--cyan)"></i>体脂肪 <span class="num">${p.bf.toFixed(1)}</span>%</div>`:""}
+    <div class="t-row" style="color:var(--text-dim)">開始比 <span class="num" style="font-size:.8rem">${(p.w-start.w).toFixed(1)}</span>kg</div>`
+});
+
+// 7日平均
+makeChart(document.getElementById("avgChart"), {
+  label:"7日平均体重の推移", data:sevenDayAvg, height:170, zoom:true, minSpan:3,
+  padL:40, padR:12,
+  defs:`<linearGradient id="avgGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8C6CFF"/><stop offset="55%" stop-color="#FF5D5D"/><stop offset="100%" stop-color="#C6FF4D"/></linearGradient>`,
+  series:[{key:"v", color:"#8C6CFF", stroke:"url(#avgGrad)", width:3, axis:"left", axisDigits:1, minPad:0.2}],
+  xLabel:p => p.range,
+  tip:(p) => {
+    const i = sevenDayAvg.indexOf(p), prev = i>0 ? sevenDayAvg[i-1].v : null;
+    const diff = prev!=null ? p.v-prev : null;
+    return `<div class="t-date">${p.range}</div>
+      <div class="t-row"><span class="num">${p.v.toFixed(2)}</span>kg</div>
+      ${diff!=null?`<div class="t-row" style="color:${diff<=0?"var(--lime)":"var(--coral)"}">前回比 <span class="num" style="font-size:.8rem">${diff>0?"+":""}${diff.toFixed(2)}</span>kg</div>`:""}`;
+  }
+});
+
+// ジム来訪
+(function(){
+  const container = document.getElementById("visitWeeks");
+  const dayNames = ["月","火","水","木","金","土","日"];
+  let html = "", cursor = new Date(2026, 7, 17);
+  while(cursor <= today){
+    let row = "";
+    for(let i=0;i<7;i++){
+      const dt = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()+i);
+      const on = gymDays.has(ymd(dt));
+      row += `<div class="day-dot ${on?"on":""}" title="${ymd(dt)}">${dt>today?"":dayNames[i]}</div>`;
+    }
+    html += `<div class="week-row"><div class="week-label">${cursor.getMonth()+1}/${cursor.getDate()}〜</div><div class="week-days">${row}</div></div>`;
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()+7);
+  }
+  container.innerHTML = html;
+})();
+
+// 種目別
+(function(){
+  const container = document.getElementById("liftCards");
+  container.innerHTML = lifts.map((l,idx)=>`
+    <div class="lift">
+      <div class="lift-head">
+        <div class="lift-name">${l.name}</div>
+        <div class="lift-pb"><span class="num">${l.current}</span><span class="pb-tag">現在</span></div>
+      </div>
+      <div class="chart" id="lift-${idx}"></div>
+      <div class="lift-note">${l.note}</div>
+    </div>`).join("");
+  lifts.forEach((l,idx)=>{
+    makeChart(document.getElementById(`lift-${idx}`), {
+      label:`${l.name}の重量推移`, data:l.series, height:96, zoom:false,
+      padL:34, padR:14, dotLimit:99,
+      series:[{key:"v", color:l.color, width:2.5, axis:"left", axisDigits:0, minPad:3}],
+      xLabel:p => p.d,
+      tip:p => `<div class="t-date">${p.d}</div><div class="t-row"><span class="num">${p.s}</span></div>`
+    });
+  });
+})();
+
+// 全記録
+(function(){
+  document.getElementById("logCount").textContent = `全${trainingLog.length}回`;
+  document.getElementById("logList").innerHTML = [...trainingLog].reverse().map(l=>`
+    <div class="log-item">
+      <div class="log-date"><span class="num">${md(l.d)}</span><br>${WD[parseD(l.d).getDay()]}</div>
+      <div><div class="log-body-part">${l.part}</div><div class="log-detail">${l.detail}</div></div>
+    </div>`).join("");
+})();
+
+// 食事管理
+(function(){
+  const firstBf = weightData.find(p=>p.bf!=null), lastBf = [...weightData].reverse().find(p=>p.bf!=null);
+  document.getElementById("dietDelta").textContent = `${(latest.w-start.w).toFixed(1)}kg`;
+  document.getElementById("dietDays").textContent = `${Math.round((parseD(latest.d)-parseD(start.d))/86400000)}日`;
+  document.getElementById("dietBf").textContent = `${(lastBf.bf-firstBf.bf)>0?"+":""}${(lastBf.bf-firstBf.bf).toFixed(1)}pt`;
+  document.getElementById("dietRemain").textContent = `${(latest.w-goal.target).toFixed(1)}kg`;
+})();
+</script>
+</body>
+</html>
